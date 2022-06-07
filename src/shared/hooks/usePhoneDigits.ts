@@ -1,88 +1,92 @@
-import React from 'react'
-import { MuiTelInputContinent } from '@shared/constants/continents'
-import { COUNTRIES, MuiTelInputCountry } from '@shared/constants/countries'
-import { matchIsArray } from '@shared/helpers/array'
+import React, { ChangeEvent } from "react";
+import { MuiTelInputContinent } from "@shared/constants/continents";
+import { COUNTRIES, MuiTelInputCountry } from "@shared/constants/countries";
+import { matchIsArray } from "@shared/helpers/array";
 import {
   getCallingCodeOfCountry,
-  matchContinentsIncludeCountry
-} from '@shared/helpers/country'
-import { AsYouType } from 'libphonenumber-js'
+  matchContinentsIncludeCountry,
+} from "@shared/helpers/country";
+import { AsYouType } from "libphonenumber-js";
 
-import { MuiTelInputInfo, MuiTelInputReason } from '../../index.types'
+import { MuiTelInputInfo, MuiTelInputReason } from "../../index.types";
 
 type UsePhoneDigitsParams = {
-  value: string
-  onChange?: (value: string, info: MuiTelInputInfo) => void
-  defaultCountry?: MuiTelInputCountry
-  forceCallingCode?: boolean
-  disableFormatting?: boolean
-  excludedCountries?: MuiTelInputCountry[]
-  onlyCountries?: MuiTelInputCountry[]
-  continents?: MuiTelInputContinent[]
-}
+  value: string;
+  onChange?: (
+    value: string,
+    info: MuiTelInputInfo,
+    event?: ChangeEvent
+  ) => void;
+  defaultCountry?: MuiTelInputCountry;
+  forceCallingCode?: boolean;
+  disableFormatting?: boolean;
+  excludedCountries?: MuiTelInputCountry[];
+  onlyCountries?: MuiTelInputCountry[];
+  continents?: MuiTelInputContinent[];
+};
 
 type State = {
-  inputValue: string
-  isoCode: MuiTelInputCountry | null
-}
+  inputValue: string;
+  isoCode: MuiTelInputCountry | null;
+};
 
 type GetInitialStateParams = {
-  defaultCountry?: MuiTelInputCountry
-  initialValue: string
-  disableFormatting?: boolean
-}
+  defaultCountry?: MuiTelInputCountry;
+  initialValue: string;
+  disableFormatting?: boolean;
+};
 
 export function getInitialState(params: GetInitialStateParams): State {
-  const { defaultCountry, initialValue, disableFormatting } = params
+  const { defaultCountry, initialValue, disableFormatting } = params;
 
   const fallbackValue = defaultCountry
     ? `+${COUNTRIES[defaultCountry][0] as string}`
-    : ''
+    : "";
 
-  const asYouType = new AsYouType(defaultCountry)
-  let inputValue = asYouType.input(initialValue)
+  const asYouType = new AsYouType(defaultCountry);
+  let inputValue = asYouType.input(initialValue);
 
-  const phoneNumberValue = asYouType.getNumberValue()
+  const phoneNumberValue = asYouType.getNumberValue();
 
   if (defaultCountry && asYouType.getCountry() === undefined) {
-    inputValue = fallbackValue
+    inputValue = fallbackValue;
   } else if (disableFormatting && phoneNumberValue) {
-    inputValue = phoneNumberValue
+    inputValue = phoneNumberValue;
   }
 
   return {
     inputValue: inputValue || fallbackValue,
-    isoCode: asYouType.getCountry() || defaultCountry || null
-  }
+    isoCode: asYouType.getCountry() || defaultCountry || null,
+  };
 }
 
 type Filters = {
-  excludedCountries?: MuiTelInputCountry[]
-  onlyCountries?: MuiTelInputCountry[]
-  continents?: MuiTelInputContinent[]
-}
+  excludedCountries?: MuiTelInputCountry[];
+  onlyCountries?: MuiTelInputCountry[];
+  continents?: MuiTelInputContinent[];
+};
 
 function matchIsIsoCodeAccepted(
   isoCode: MuiTelInputCountry,
   filters: Filters
 ): boolean {
-  const { excludedCountries, onlyCountries, continents } = filters
+  const { excludedCountries, onlyCountries, continents } = filters;
   if (
     matchIsArray(excludedCountries, true) &&
     excludedCountries.includes(isoCode)
   ) {
-    return false
+    return false;
   }
   if (matchIsArray(onlyCountries) && !onlyCountries.includes(isoCode)) {
-    return false
+    return false;
   }
   if (
     matchIsArray(continents) &&
     !matchContinentsIncludeCountry(continents, isoCode)
   ) {
-    return false
+    return false;
   }
-  return true
+  return true;
 }
 
 export default function usePhoneDigits({
@@ -93,21 +97,21 @@ export default function usePhoneDigits({
   onlyCountries,
   excludedCountries,
   continents,
-  disableFormatting
+  disableFormatting,
 }: UsePhoneDigitsParams) {
-  const asYouTypeRef = React.useRef<AsYouType>(new AsYouType(defaultCountry))
-  const inputRef = React.useRef<HTMLInputElement>(null)
+  const asYouTypeRef = React.useRef<AsYouType>(new AsYouType(defaultCountry));
+  const inputRef = React.useRef<HTMLInputElement>(null);
   const [previousDefaultCountry, setPreviousDefaultCountry] = React.useState<
     MuiTelInputCountry | undefined
-  >(defaultCountry)
+  >(defaultCountry);
   const [state, setState] = React.useState<State>(() => {
     return getInitialState({
       initialValue: value,
       defaultCountry,
-      disableFormatting
-    })
-  })
-  const [previousValue, setPreviousValue] = React.useState(value)
+      disableFormatting,
+    });
+  });
+  const [previousValue, setPreviousValue] = React.useState(value);
 
   const buildOnChangeInfo = (reason: MuiTelInputReason): MuiTelInputInfo => {
     return {
@@ -115,9 +119,9 @@ export default function usePhoneDigits({
       countryCode: asYouTypeRef.current.getCountry() || null,
       nationalNumber: asYouTypeRef.current.getNationalNumber(),
       numberValue: asYouTypeRef.current.getNumberValue() || null,
-      reason
-    }
-  }
+      reason,
+    };
+  };
 
   const matchIsIsoCodeValid = (isoCode: MuiTelInputCountry | null) => {
     return (
@@ -125,117 +129,121 @@ export default function usePhoneDigits({
       matchIsIsoCodeAccepted(isoCode, {
         onlyCountries,
         excludedCountries,
-        continents
+        continents,
       })
-    )
-  }
+    );
+  };
 
   const typeNewValue = (inputValue: string): string => {
-    asYouTypeRef.current.reset()
-    return asYouTypeRef.current.input(inputValue)
-  }
+    asYouTypeRef.current.reset();
+    return asYouTypeRef.current.input(inputValue);
+  };
 
   const onInputChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-    let inputVal = event.target.value
+    let inputVal = event.target.value;
     inputVal =
-      inputVal.startsWith('+') || inputVal === '' ? inputVal : `+${inputVal}`
-    const formattedValue = typeNewValue(inputVal)
-    const country = asYouTypeRef.current.getCountry() || null
-    const phoneNumber = asYouTypeRef.current.getNumber() || null
-    const numberValue = asYouTypeRef.current.getNumberValue() || ''
+      inputVal.startsWith("+") || inputVal === "" ? inputVal : `+${inputVal}`;
+    const formattedValue = typeNewValue(inputVal);
+    const country = asYouTypeRef.current.getCountry() || null;
+    const phoneNumber = asYouTypeRef.current.getNumber() || null;
+    const numberValue = asYouTypeRef.current.getNumberValue() || "";
     if (forceCallingCode && !phoneNumber && (state.isoCode || defaultCountry)) {
       const inputValueIsoCode = `+${getCallingCodeOfCountry(
         state.isoCode || (defaultCountry as MuiTelInputCountry)
-      )}`
-      onChange?.(inputValueIsoCode, buildOnChangeInfo('input'))
-      setPreviousValue(inputValueIsoCode)
+      )}`;
+      onChange?.(inputValueIsoCode, buildOnChangeInfo("input"), event);
+      setPreviousValue(inputValueIsoCode);
       setState({
         isoCode: state.isoCode || defaultCountry || null,
-        inputValue: inputValueIsoCode
-      })
+        inputValue: inputValueIsoCode,
+      });
     } else if (numberValue && (!country || !matchIsIsoCodeValid(country))) {
       // Do not format when isoCode is not valide
-      onChange?.(numberValue, {
-        ...buildOnChangeInfo('input'),
-        countryCode: null,
-        countryCallingCode: null,
-        nationalNumber: null
-      })
-      setPreviousValue(numberValue)
+      onChange?.(
+        numberValue,
+        {
+          ...buildOnChangeInfo("input"),
+          countryCode: null,
+          countryCallingCode: null,
+          nationalNumber: null,
+        },
+        event
+      );
+      setPreviousValue(numberValue);
       setState({
         isoCode: null,
-        inputValue: numberValue
-      })
+        inputValue: numberValue,
+      });
     } else if (disableFormatting) {
-      onChange?.(numberValue, buildOnChangeInfo('input'))
-      setPreviousValue(numberValue)
+      onChange?.(numberValue, buildOnChangeInfo("input"), event);
+      setPreviousValue(numberValue);
       setState({
         isoCode: country || null,
-        inputValue: numberValue
-      })
+        inputValue: numberValue,
+      });
     } else {
-      onChange?.(formattedValue, buildOnChangeInfo('input'))
-      setPreviousValue(formattedValue)
+      onChange?.(formattedValue, buildOnChangeInfo("input"), event);
+      setPreviousValue(formattedValue);
       setState({
         isoCode: country || null,
-        inputValue: formattedValue
-      })
+        inputValue: formattedValue,
+      });
     }
-  }
+  };
 
   React.useEffect(() => {
     if (value !== previousValue) {
-      setPreviousValue(value)
+      setPreviousValue(value);
       setState(
         getInitialState({
           initialValue: value,
-          defaultCountry
+          defaultCountry,
         })
-      )
+      );
     }
-  }, [value, previousValue, defaultCountry])
+  }, [value, previousValue, defaultCountry]);
 
   React.useEffect(() => {
     if (defaultCountry !== previousDefaultCountry) {
-      setPreviousDefaultCountry(defaultCountry)
-      asYouTypeRef.current = new AsYouType(defaultCountry)
+      setPreviousDefaultCountry(defaultCountry);
+      asYouTypeRef.current = new AsYouType(defaultCountry);
       const { inputValue, isoCode } = getInitialState({
-        initialValue: '',
-        defaultCountry
-      })
-      setPreviousValue(inputValue)
-      asYouTypeRef.current.input(inputValue)
-      onChange?.(inputValue, buildOnChangeInfo('country'))
+        initialValue: "",
+        defaultCountry,
+      });
+      setPreviousValue(inputValue);
+      asYouTypeRef.current.input(inputValue);
+      onChange?.(inputValue, buildOnChangeInfo("country"));
       setState({
         inputValue,
-        isoCode
-      })
+        isoCode,
+      });
     }
-  }, [defaultCountry, previousDefaultCountry, onChange])
+  }, [defaultCountry, previousDefaultCountry, onChange]);
 
   const onCountryChange = (newCountry: MuiTelInputCountry): void => {
     if (newCountry === state.isoCode) {
-      return
+      return;
     }
-    const callingCode = COUNTRIES[newCountry][0] as string
-    const formattedValue = typeNewValue(`+${callingCode}`)
+    const callingCode = COUNTRIES[newCountry][0] as string;
+    const formattedValue = typeNewValue(`+${callingCode}`);
     onChange?.(formattedValue, {
-      ...buildOnChangeInfo('country'),
+      ...buildOnChangeInfo("country"),
       // Some country have the same calling code, so we choose what the user has selected
-      countryCode: newCountry
-    })
-    setPreviousValue(formattedValue)
+      countryCode: newCountry,
+    });
+    setPreviousValue(formattedValue);
     setState({
       isoCode: newCountry,
-      inputValue: formattedValue
-    })
-  }
+      inputValue: formattedValue,
+    });
+  };
 
   return {
     inputValue: state.inputValue,
     isoCode: state.isoCode,
     onInputChange,
     onCountryChange,
-    inputRef
-  }
+    inputRef,
+  };
 }
